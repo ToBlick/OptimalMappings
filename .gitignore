@@ -40,6 +40,3 @@ figs/
 # That eps slaing script that is not refactored yet
 scripts/eps_scaling_usq.jl
 scripts/J_calcs.jl
-
-
-
