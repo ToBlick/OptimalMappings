@@ -20,7 +20,7 @@ jobs:
       - run: |
           julia --project=docs/ -e '
             using Pkg;
-            Pkg.add(url = ".."); 
+            Pkg.add(url = "https://github.com/ToBlick/OptimalMappings.jl"); 
             Pkg.add(url = "https://github.com/JuliaRCM/WassersteinDictionaries.jl/"); 
             '
       - uses: julia-actions/julia-buildpkg@v1
