@@ -12,7 +12,6 @@ using OptimalMappings
 using Printf
 using LaTeXStrings
 using Random
-using BenchmarkTools
 using WassersteinDictionaries
 using Gridap, Gridap.FESpaces, Gridap.CellData
 using Gridap.CellData: get_cell_quadrature, get_node_coordinates
