@@ -23,9 +23,8 @@ jobs:
         run: |
           julia --project -e '
             using Pkg
-            Pkg.add(url = "https://github.com/JuliaRCM/WassersteinDictionaries.jl")        
-            Pkg.develop(PackageSpec(path=pwd()))
-            Pkg.instantiate()'
+            Pkg.add(url = "https://github.com/JuliaRCM/WassersteinDictionaries.jl")
+            '
       - name: Build and deploy
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}     # If authenticating with GitHub Actions token
