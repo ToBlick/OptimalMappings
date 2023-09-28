@@ -1,35 +1,33 @@
-name: CI
+name: Documentation
+
 on:
   push:
     branches:
       - main
-    tags: ['*']
+    tags: '*'
   pull_request:
+
 jobs:
-  docs:
-    name: Documentation
-    runs-on: ubuntu-latest
+  build:
     permissions: write-all
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - uses: julia-actions/setup-julia@v1
         with:
           version: '1'
+      - uses: julia-actions/cache@v1
+        with:
+          cache-compiled: "true"
       - name: Install dependencies
         run: |
-          julia --project -e '
+          julia --project=docs -e '
             using Pkg
-            Pkg.add(url = "https://github.com/JuliaRCM/WassersteinDictionaries.jl")            
+            Pkg.add(url = "https://github.com/JuliaRCM/WassersteinDictionaries.jl")        
             Pkg.develop(PackageSpec(path=pwd()))
             Pkg.instantiate()'
-      - uses: julia-actions/julia-buildpkg@v1
-      - uses: julia-actions/julia-docdeploy@v1
+      - name: Build and deploy
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }}
-      - run: |
-          julia --project=docs -e '
-            using Documenter: DocMeta, doctest
-            using OptimalMappings
-            DocMeta.setdocmeta!(OptimalMappings, :DocTestSetup, :(using OptimalMappings); recursive=true)
-            doctest(OptimalMappings)'
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}     # If authenticating with GitHub Actions token
+          DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }} # If authenticating with SSH deploy key
+        run: julia --project=docs/ docs/make.jl
