@@ -1,6 +1,6 @@
 # OptimalMappings.jl
 
-This package contains the code used in the numerical examples of [arXiv:2304.14884](https://arxiv.org/abs/2304.14884). It relies on [Gridap.jl](https://github.com/gridap/Gridap.jl) for finite element routines and [WassersteinDictionaries.jl](ttps://github.com/JuliaRCM/WassersteinDictionaries.jl/) for computational optimal transport.
+This package contains the code used in the numerical examples of [arXiv:2304.14884](https://arxiv.org/abs/2304.14884). It relies on [Gridap.jl](https://github.com/gridap/Gridap.jl) for finite element routines and [OptimalTransportTools.jl](https://github.com/JuliaRCM/OptimalTransportTools.jl) for computational optimal transport.
 
 ## Example 1
 
