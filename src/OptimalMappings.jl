@@ -2,7 +2,7 @@ module OptimalMappings
 
     using LogExpFunctions
     using Distances
-    using WassersteinDictionaries
+    using OptimalTransportTools
     using GaussianProcesses
 
     using Gridap, Gridap.FESpaces, Gridap.CellData

@@ -12,7 +12,7 @@ using OptimalMappings
 using Printf
 using LaTeXStrings
 using Random
-using WassersteinDictionaries
+using OptimalTransportTools
 using Gridap, Gridap.FESpaces, Gridap.CellData
 using Gridap.CellData: get_cell_quadrature, get_node_coordinates
 using LineSearches
@@ -104,8 +104,8 @@ nothing # hide
 The choice for ``\rho`` is ``\rho(\mu) := \tfrac{u(\mu)^2}{\int u(\mu)^2}``. The reference density ``\bar \rho`` is the (unweighted) OT barycenter. 
 
 ```@example 1
-c = WassersteinDictionaries.get_cost_matrix_separated(N_fine+1, d, a=[fe_spaces.domain[1] fe_spaces.domain[3]], b=[fe_spaces.domain[2] fe_spaces.domain[4]])
-k = WassersteinDictionaries.get_gibbs_matrix(c, ε)
+c = OptimalTransportTools.get_cost_matrix_separated(N_fine+1, d, a=[fe_spaces.domain[1] fe_spaces.domain[3]], b=[fe_spaces.domain[2] fe_spaces.domain[4]])
+k = OptimalTransportTools.get_gibbs_matrix(c, ε)
 MC = MatrixCache(N_fine + 1)
 ρ(u) = u ⋅ u
 ρ̂_train = [get_ρ̂(u, ρ, fe_spaces.V_fine, N_fine + 1) for u in u_train]

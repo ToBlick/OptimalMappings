@@ -57,7 +57,7 @@ function c_transform(ψᶜ, V₁, c, log_ρ̂_ref, MC, ε_fine)
     ψᶜ₁ = interpolate_everywhere(Interpolable(ψᶜ), V₁)
     ψ̄ᶜ = reshape( get_free_dof_values(ψᶜ₁), N_fine+1, N_fine+1)
     ψ̄ = zero(ψ̄ᶜ)
-    WassersteinDictionaries.softmin_separated!(ψ̄, ψ̄ᶜ, log_ρ̂_ref, ε_fine, c, MC[:t1,Float64], MC[:t2,Float64])
+    OptimalTransportTools.softmin_separated!(ψ̄, ψ̄ᶜ, log_ρ̂_ref, ε_fine, c, MC[:t1,Float64], MC[:t2,Float64])
 
     ψ̄
 end

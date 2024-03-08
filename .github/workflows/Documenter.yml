@@ -23,7 +23,7 @@ jobs:
         run: |
           julia --project -e '
             using Pkg
-            Pkg.add(url = "https://github.com/JuliaRCM/WassersteinDictionaries.jl")
+            Pkg.add(url = "https://github.com/JuliaRCM/OptimalTransportTools.jl")
             '
       - name: Build and deploy
         env:
