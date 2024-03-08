@@ -5,4 +5,23 @@ This package contains the code used in the numerical examples of the paper [A re
 
 The directory `scripts` contains two files to reproduce the examples shown in the paper. Example one is also demonstrated [here](https://toblick.github.io/OptimalMappings.jl/dev/) using lower resolution and fewer solution samples (this code is executed whenever the code in this repository is updated, hence this page is always up to date).
 
-This package is not registered. To run the code, either clone this repository or add the package via `pkg> add https://github.com/ToBlick/OptimalMappings.jl` or `"git@github.com:ToBlick/OptimalMappings.jl.git"` using the package manager and copy only the script files. To generate the figures, un-comment the corresponding code in the scripts and create a directory `figs` in the parent directory of `scripts`.
+To execute the scripts, clone the repository:
+```git clone https://github.com/ToBlick/OptimalMappings.jl```
+Change to the OptimalMappings.jl directory and open Julia:
+```
+cd OptimalMappings.jl
+julia --project=.
+```
+Install the (un-registered) dependency `OptimalTransportTools.jl` and instantiate the project:
+```
+] add https://github.com/JuliaRCM/OptimalTransportTools.jl
+] instantiate
+```
+Lastly, run the script(s):
+```
+julia --project=. scripts/ex1.jl
+julia --project=. scripts/ex2.jl
+```
+Generated figures are saved in `OptimalMappings.jl/figs`.
+
+Running the scripts with the parameters from the paper takes around seven minutes each on a M1 processor with 16GM of RAM. This can be sped up by reducing either the resolution `N` or the number of snapshots in the training set `nₛ` and/or test set `nₜ`.
