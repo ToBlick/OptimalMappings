@@ -2,12 +2,10 @@ using OptimalMappings
 using Printf
 using LaTeXStrings
 using Random
-using BenchmarkTools
-using WassersteinDictionaries
+using OptimalTransportTools
 using Gridap, Gridap.FESpaces, Gridap.CellData
 using Gridap.CellData: get_cell_quadrature, get_node_coordinates
 using LineSearches
-using Revise
 using Plots
 using GaussianProcesses
 using Statistics
@@ -114,8 +112,8 @@ model_fine = CartesianDiscreteModel(domain, partition_fine)
 V_fine = FESpace(model_fine, ReferenceFE(lagrangian, Float64, 1), conformity=:H1)
 Ψ = FESpace(model, ReferenceFE(lagrangian, Float64, highorder), conformity=:H1)
 
-c = WassersteinDictionaries.get_cost_matrix_separated(N_fine + 1, d, a=[domain[1] domain[3]], b=[domain[2] domain[4]])
-k = WassersteinDictionaries.get_gibbs_matrix(c, ε)
+c = OptimalTransportTools.get_cost_matrix_separated(N_fine + 1, d, a=[domain[1] domain[3]], b=[domain[2] domain[4]])
+k = OptimalTransportTools.get_gibbs_matrix(c, ε)
 MC = MatrixCache(N_fine + 1)
 ρ(u) = u
 ρ̂_train = [get_ρ̂(u, ρ, V_fine, N_fine + 1) for u in u_train]
@@ -133,7 +131,6 @@ println("Calculating RB of transport potentials...")
 ξᶜ, evd_ψᶜ = pod_monge_embedding(ψᶜ, ρ_ref, Ψ, Ψ, dΩ, τ)
 m = length(ξᶜ)
 println("Found $m transport modes.")
-
 
 λ = [[sum(∫(∇(_ψᶜ) ⋅ ∇(_ξᶜ) * ρ_ref)dΩ) for _ξᶜ in ξᶜ] for _ψᶜ in ψᶜ]
 ψᶜ_train = [FEFunction(Ψ, _λ' * get_free_dof_values.(ξᶜ)) for _λ in λ]
@@ -209,7 +206,17 @@ println(" ")
 
 ### Plots
 
-#=
+folder_path = "figs"
+
+# Check if the folder exists
+if !isdir(folder_path)
+    # If the folder doesn't exist, create it
+    mkdir(folder_path)
+    println("Folder created: $folder_path")
+else
+    nothing
+end
+
 # plot the L2 error over time
 cpal = palette(:thermal, 4)
 plot(t0:dt:tF_test, Statistics.mean(M_ΔL2_trb, dims=1)', minorgrid=true, ylim=(0, 0.5),
@@ -224,7 +231,7 @@ plot!(t0:dt:tF_test, Statistics.mean(M_ΔL2_rb, dims=1)',
     legendfontsize=12, tickfontsize=8, xguidefontsize=12, yguidefontsize=12
 )
 vline!([0.8], color="grey", style=:dash, label=false)
-#savefig("figs/errors.png")
+savefig("figs/errors_ex2.png")
 
 ### plot some snapshot crossections before and after registration
 cpal = palette(:thermal, 17);
@@ -234,7 +241,7 @@ idxs = rand(1:length(u_train),15)
 for i in idxs
     plot!(0:0.001:1, x -> T★u_train[i](Point(x, 0.5)), legend=false,
         linewidth=2, color=cpal[_i], xlabel=L"u", ylabel=L"u \circ \Phi^{-1}",
-        legendfontsize=12, tickfontsize=8, xguidefontsize=12, yguidefontsize=12)
+        legendfontsize=12, tickfontsize=8, xguidefontsize=12, yguidefontsize=12, dpi=400)
     global _i += 1
 end
 plt2 = plot()
@@ -242,20 +249,21 @@ _i = 1
 for i in idxs
     plot!(0:0.001:1, x -> u_train[i](Point(x, 0.5)), legend=false,
         linewidth=2, color=cpal[_i], xlabel=L"x", ylabel=L"u",
-        legendfontsize=12, tickfontsize=8, xguidefontsize=12, yguidefontsize=12)
+        legendfontsize=12, tickfontsize=8, xguidefontsize=12, yguidefontsize=12, dpi=400)
     global _i += 1
 end
 plot(plt1, plt2)
+savefig("figs/crossections_ex2.png")
 
 # plot ev decay"
 cpal = palette(:thermal, 4);
 plot(abs.(evd_u.values) ./ evd_u.values[1], yaxis=:log, minorgrid=true, xaxis=:log,
     yticks=10.0 .^ (-16:2:0), xticks=([1, 10, 100], string.([1, 10, 100])),
     linewidth=2, marker=:circle, xlabel=L"n", ylabel=L"\lambda_n / \lambda_1", ylim=(1e-16, 2), label=L"u", color=cpal[1],
-    legendfontsize=12, tickfontsize=8, xguidefontsize=12, yguidefontsize=12, legend=:bottomleft)
+    legendfontsize=12, tickfontsize=8, xguidefontsize=12, yguidefontsize=12, legend=:bottomleft, dpi=400)
 plot!(abs.(evd_T★u.values) ./ evd_T★u.values[1], linewidth=2, marker=:square, markersize=3, label=L"u \circ \Phi^{-1}", color=cpal[2])
 plot!(abs.(evd_ψᶜ.values) ./ evd_ψᶜ.values[1], linewidth=2, marker=:diamond, label=L"\nabla \psi^c", color=cpal[3])
-savefig("figs/evds_log.png")
+savefig("figs/evds_log_ex2.png")
 
 nₚ = minimum((nₛ, 50))
 cpal = palette(:thermal, 6)
@@ -269,10 +277,10 @@ plot!(abs.(evd_ā★J.values[1:nₚ]) ./ evd_ā★J.values[1], linewidth=2, ma
     label=L"D\Phi^{-1} \bar a \, \det D\Phi^{-1}", color=cpal[3])
 plot!(abs.(evd_K.values[1:nₚ]) ./ evd_K.values[1], linewidth=2, marker=:utriangle,
     label=L"[D\Phi^{-1}]^{-1} [D\Phi^{-1}]^{-T} \det D\Phi^{-1}", color=cpal[4])
-savefig("figs/evds_log_eim.png")
+savefig("figs/evds_log_eim_ex2.png")
 
 _i = argmax(M_ΔL2_trb[:, end])
-plt1 = plot()
+plt1 = plot(dpi=400)
 s_fine = -0.5:0.005:0.5
 cpal = palette(:thermal, 4)
 for i in 1 + (_i - 1) * length(t0:0.05:tF_test)
@@ -286,7 +294,7 @@ for i in 1 + (_i - 1) * length(t0:0.05:tF_test)
     plot!(s_fine, x -> (u_rb_eim[i])(Point([0.5, 0.5] + x .* [cos(ω_test[_i]), sin(ω_test[_i])])),
         linewidth=2, color=cpal[3], label=L"u_{\mathrm{rb,eim}}",
         legendfontsize=12, tickfontsize=8, xguidefontsize=12, yguidefontsize=12)
-    println(i)
+    #println(i)
 end
 for i in ((_i - 1) * length(t0:0.05:tF_test) + div(1 + length(t0:0.05:tF_test), 2), (_i - 1) * length(t0:0.05:tF_test) + length(t0:0.05:tF_test))
     plot!(s_fine, x -> (u_test[i])(Point([0.5, 0.5] + x .* [cos(ω_test[_i]), sin(ω_test[_i])])),
@@ -299,8 +307,7 @@ for i in ((_i - 1) * length(t0:0.05:tF_test) + div(1 + length(t0:0.05:tF_test), 
     plot!(s_fine, x -> (u_rb_eim[i])(Point([0.5, 0.5] + x .* [cos(ω_test[_i]), sin(ω_test[_i])])),
         linewidth=2, color=cpal[3], label=false,
         legendfontsize=12, tickfontsize=8, xguidefontsize=12, yguidefontsize=12)
-    println(i)
+    #println(i)
 end
 plt1
-savefig("figs/worstcase.png")
-=$
+savefig("figs/worstcase_ex2.png")

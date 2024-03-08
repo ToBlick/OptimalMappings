@@ -35,7 +35,8 @@ Manifest.toml
 notebooks/
 
 # Figures
-figs/
+*.pdf
+*.png
 
 # That eps slaing script that is not refactored yet
 scripts/eps_scaling_usq.jl

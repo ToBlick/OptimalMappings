@@ -2,12 +2,9 @@ using OptimalMappings
 using Printf
 using LaTeXStrings
 using Random
-using BenchmarkTools
-using WassersteinDictionaries
+using OptimalTransportTools
 using Gridap, Gridap.FESpaces, Gridap.CellData
 using Gridap.CellData: get_cell_quadrature, get_node_coordinates
-using LineSearches
-using Revise
 using Plots
 using GaussianProcesses
 using Statistics
@@ -24,8 +21,8 @@ const κ = 1 / sqrt(ε)
 const debias = true
 
 # parameters of the PPDE problem
-const nₛ = 20
-const nₜ = 10
+const nₛ = 50 #100 in the paper
+const nₜ = 25 #50 in the paper
 
 # parameter space
 const μ_min = -0.35
@@ -33,7 +30,7 @@ const μ_max = 0.35
 
 # finite element spaces
 const d = 2
-const N = 32
+const N = 32 #64 in the paper
 const highorder = 3
 const N_fine = highorder * N
 const ε_fine = 0.1 / N^2
@@ -76,8 +73,8 @@ u_rb = [FEFunction(fe_spaces.V, u' * get_free_dof_values.(ζ)) for u in ũ_rb]
 ### Transport calculations'
 
 println("Calculating densities...")
-c = WassersteinDictionaries.get_cost_matrix_separated(N_fine + 1, d, a=[fe_spaces.domain[1] fe_spaces.domain[3]], b=[fe_spaces.domain[2] fe_spaces.domain[4]])
-k = WassersteinDictionaries.get_gibbs_matrix(c, ε)
+c = OptimalTransportTools.get_cost_matrix_separated(N_fine + 1, d, a=[fe_spaces.domain[1] fe_spaces.domain[3]], b=[fe_spaces.domain[2] fe_spaces.domain[4]])
+k = OptimalTransportTools.get_gibbs_matrix(c, ε)
 MC = MatrixCache(N_fine + 1)
 ρ(u) = u ⋅ u
 #ρ̂_train = [get_ρ̂(x -> f(x, μ .+ 0.5), fe_spaces.V_fine, N_fine + 1) for μ in μ_train]
@@ -92,6 +89,16 @@ log_ρ̂_ref = safe_log.(ρ̂_ref)
 println("Calculating transport potentials...")
 ψ̂ᶜ = [get_ψ̂_ψ̂ᶜ(ρ̂, ρ̂_ref, k, SP, MC)[2] for ρ̂ in ρ̂_train];
 ψᶜ = [boundary_projection(ψᶜ, δ⁻¹, κ, fe_spaces.Ψ, dΩ, 2 * highorder) for ψᶜ in ψ̂ᶜ];
+
+cpal = palette(:thermal, 12)
+plt = plot()
+__x = 0:0.1:1
+for i in eachindex(__x)
+        plot!(0:0.005:1, y -> (ψᶜ[1])(Point(__x[i],y)), color = cpal[i], minorgrid = true,
+        linewidth=2, xlabel = L"x_2", ylabel = L"\psi^c", label = false,
+        legendfontsize=14, tickfontsize=10, xguidefontsize=14, yguidefontsize=14)
+end
+plt
 
 ### Transport modes
 
@@ -202,35 +209,45 @@ println(" ")
 println(" ")
 
 ### Plots
-#=
+
+folder_path = "figs"
+
+# Check if the folder exists
+if !isdir(folder_path)
+    # If the folder doesn't exist, create it
+    mkdir(folder_path)
+    println("Folder created: $folder_path")
+else
+    nothing
+end
 
 # plot the worst case (H1 error) reconstruction
 _i = argmax(ΔH1_trb_eim)
 μ = μ_test[_i]
 cpal = palette(:thermal, 5)
-plt1 = plot(0:0.005:1, x -> u_test[_i](Point(x, 0.5 + μ_test[_i][2])), linewidth=2, color=cpal[1], xlabel=L"x",
-    label=L"u", legendfontsize=12, tickfontsize=8, xguidefontsize=12, yguidefontsize=12, dpi=400)
+plt1 = plot(0:0.005:1, x -> u_test[_i](Point(x, 0.5 + μ_test[_i][2])), linewidth=2, color=cpal[1], xlabel=L"x_1",
+    label=L"u", legendfontsize=14, tickfontsize=10, xguidefontsize=14, yguidefontsize=14, grid = false, dpi=400, legend = :topleft)
 plot!(0:0.005:1, x -> u_rb[_i](Point(x, 0.5 + μ_test[_i][2])), linewidth=2, color=cpal[2], label=L"u_{\mathrm{rb}}")
 plot!(0:0.005:1, x -> u_trb[_i](Point(x, 0.5 + μ_test[_i][2])), linewidth=2, color=cpal[3], label=L"u_{\mathrm{trb}}")
 plot!(0:0.005:1, x -> u_trb_eim[_i](Point(x, 0.5 + μ_test[_i][2])), linewidth=2, color=cpal[4], label=L"u_{\mathrm{trb, eim}}")
-plt2 = plot(0:0.005:1, x -> u_test[_i](Point(0.5 + μ_test[_i][1], x)), linewidth=2, color=cpal[1], xlabel=L"y",
-    label=L"u", legendfontsize=12, tickfontsize=8, xguidefontsize=12, yguidefontsize=12, dpi=400)
+plt2 = plot(0:0.005:1, x -> u_test[_i](Point(0.5 + μ_test[_i][1], x)), linewidth=2, color=cpal[1], xlabel=L"x_2", grid = false,
+    label=L"u", legendfontsize=14, tickfontsize=10, xguidefontsize=14, yguidefontsize=14, dpi=400, legend = false)
 plot!(0:0.005:1, x -> u_rb[_i](Point(0.5 + μ_test[_i][1], x)), linewidth=2, color=cpal[2], label=L"u_{\mathrm{rb}}")
 plot!(0:0.005:1, x -> u_trb[_i](Point(0.5 + μ_test[_i][1], x)), linewidth=2, color=cpal[3], label=L"u_{\mathrm{trb}}")
 plot!(0:0.005:1, x -> u_trb_eim[_i](Point(0.5 + μ_test[_i][1], x)), linewidth=2, color=cpal[4], label=L"u_{\mathrm{trb, eim}}")
 
 plot(plt1, plt2)
-savefig("figs/crosssecs.png")
+savefig("figs/crossections_ex1.png")
 
 # plot ev decay
 cpal = palette(:thermal, 4);
 plot(abs.(evd_f.values) ./ evd_f.values[1], yaxis=:log, minorgrid=true, xaxis=:log,
     yticks=10.0 .^ (-16:2:0), xticks=([1, 10, 100], string.([1, 10, 100])),
     linewidth=2, marker=:circle, xlabel=L"n", ylabel=L"\lambda_n / \lambda_1", ylim=(1e-16, 2), label=L"f", color=cpal[1],
-    legendfontsize=12, tickfontsize=8, xguidefontsize=12, yguidefontsize=12, legend=:bottomleft)
+    legendfontsize=14, tickfontsize=10, xguidefontsize=14, yguidefontsize=14, legend=:bottomleft, dpi=400)
 plot!(abs.(evd_f★J.values) ./ evd_f★J.values[1], linewidth=2, marker=:square, markersize=3, label=L"f \circ \Phi^{-1} \det D\Phi^{-1}", color=cpal[2])
 plot!(abs.(evd_K.values) ./ evd_K.values[1], linewidth=2, marker=:diamond, label=L"[D\Phi^{-1}]^{-1} [D\Phi^{-1}]^{-T} \det D\Phi^{-1}", color=cpal[3])
-savefig("figs/evds_eim_log.png")
+savefig("figs/evds_eim_log_ex1.png")
 
 println("Plotting transport modes...")
 x_cord = 0:0.025:1
@@ -238,7 +255,7 @@ for i in 1:m
         surface(x_cord, x_cord, (x, y) -> ξᶜ[i](Point(x, y)) - ξᶜ[i](Point(0.5, 0.5)),
         cbar=false, xlabel=L"x", ylabel=L"y", zlabel=L"\xi^c_{%$i}", size=(400, 400), camera=(30, 30),
         legendfontsize=12, tickfontsize=8, xguidefontsize=12, yguidefontsize=12, zguidefontsize=12, dpi=400)
-    savefig("figs/xi$i.png")
+    savefig("figs/xi$(i)_ex1.png")
 end
 
 # plot gp
@@ -247,7 +264,7 @@ for i in 1:m
         xlim=(μ_min, μ_max), ylim=(μ_min, μ_max), camera=(30, 45), size=(400, 400),
         legendfontsize=12, tickfontsize=8, xguidefontsize=12, yguidefontsize=12, zguidefontsize=12, dpi=400)
     scatter!([μ[1] for μ in μ_train], [μ[2] for μ in μ_train], predict_y(gp[i], μ_mat)[1], label=false, color=:white, markersize=2, aspectratio=1)
-    savefig("figs/w$i.png")
+    savefig("figs/w$(i)_ex1.png")
 end
 
 # plot ev decay"
@@ -255,10 +272,10 @@ cpal = palette(:thermal, 4);
 plot(abs.(evd_u.values) ./ evd_u.values[1], yaxis=:log, minorgrid=true, xaxis=:log,
     yticks=10.0 .^ (-16:2:0), xticks=([1, 10, 100], string.([1, 10, 100])),
     linewidth=2, marker=:circle, xlabel=L"n", ylabel=L"\lambda_n / \lambda_1", ylim=(1e-16, 2), label=L"u", color=cpal[1],
-    legendfontsize=12, tickfontsize=8, xguidefontsize=12, yguidefontsize=12, legend=:bottomleft)
+    legendfontsize=14, tickfontsize=10, xguidefontsize=14, yguidefontsize=14, legend=:bottomleft, dpi=400)
 plot!(abs.(evd_T★u.values) ./ evd_T★u.values[1], linewidth=2, marker=:square, markersize=3, label=L"u \circ \Phi^{-1}", color=cpal[2])
 plot!(abs.(evd_ψᶜ.values) ./ evd_ψᶜ.values[1], linewidth=2, marker=:diamond, label=L"\nabla \psi^c", color=cpal[3])
-savefig("figs/evds_log.png")
+savefig("figs/evds_log_ex1.png")
 
 ### plot some snapshot crossections before and after registration
 cpal = palette(:thermal, 11);
@@ -268,7 +285,7 @@ idxs = 1:10
 for i in idxs
     plot!(0:0.001:1, x -> T★u_train[i](Point(x, 0.5)), legend=false,
         linewidth=2, color=cpal[_i], xlabel=L"u", ylabel=L"u \circ \Phi^{-1}",
-        legendfontsize=12, tickfontsize=8, xguidefontsize=12, yguidefontsize=12)
+        legendfontsize=12, tickfontsize=8, xguidefontsize=12, yguidefontsize=12, dpi=400)
     global _i += 1
 end
 plt2 = plot()
@@ -276,10 +293,8 @@ _i = 1
 for i in idxs
     plot!(0:0.001:1, x -> u_train[i](Point(x, 0.5)), legend=false,
         linewidth=2, color=cpal[_i], xlabel=L"x", ylabel=L"u",
-        legendfontsize=12, tickfontsize=8, xguidefontsize=12, yguidefontsize=12)
+        legendfontsize=12, tickfontsize=8, xguidefontsize=12, yguidefontsize=12, dpi=400)
     global _i += 1
 end
 plot(plt1, plt2)
-savefig("figs/u_registered.png")
-
-=#
+savefig("figs/u_registered_ex1.png")
