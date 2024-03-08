@@ -24,4 +24,4 @@ julia --project=. scripts/ex2.jl
 ```
 Generated figures are saved in `OptimalMappings.jl/figs`.
 
-Running the scripts with the parameters from the paper takes around seven minutes each on a M1 processor with 16GM of RAM. This can be sped up by reducing either the resolution `N` or the number of snapshots in the training set `nₜ` and/or test set `nₜ`.
+Running the scripts with the parameters from the paper takes around seven minutes each on a M1 processor with 16GM of RAM. This can be sped up by reducing either the resolution `N` or the number of snapshots in the training set `nₛ` and/or test set `nₜ`.
