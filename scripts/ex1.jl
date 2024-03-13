@@ -21,8 +21,8 @@ const κ = 1 / sqrt(ε)
 const debias = true
 
 # parameters of the PPDE problem
-const nₛ = 50 #100 in the paper
-const nₜ = 25 #50 in the paper
+const nₛ = 100
+const nₜ = 50
 
 # parameter space
 const μ_min = -0.35
@@ -30,7 +30,7 @@ const μ_max = 0.35
 
 # finite element spaces
 const d = 2
-const N = 32 #64 in the paper
+const N = 64
 const highorder = 3
 const N_fine = highorder * N
 const ε_fine = 0.1 / N^2
