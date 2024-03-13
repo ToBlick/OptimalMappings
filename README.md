@@ -10,18 +10,19 @@ To execute the scripts, clone the repository:
 Change to the OptimalMappings.jl directory and open Julia:
 ```
 cd OptimalMappings.jl
-julia --project=.
+julia --project
 ```
 Install the (un-registered) dependency `OptimalTransportTools.jl` and instantiate the project:
 ```
-] add https://github.com/JuliaRCM/OptimalTransportTools.jl
-] instantiate
+] 
+add https://github.com/JuliaRCM/OptimalTransportTools.jl
+instantiate
 ```
 Lastly, run the script(s):
 ```
-julia --project=. scripts/ex1.jl
-julia --project=. scripts/ex2.jl
+julia --project scripts/ex1.jl
+julia --project scripts/ex2.jl
 ```
 Generated figures are saved in `OptimalMappings.jl/figs`.
 
-Running the scripts with the parameters from the paper takes around seven minutes each on a M1 processor with 16GM of RAM. This can be sped up by reducing either the resolution `N` or the number of snapshots in the training set `nₛ` and/or test set `nₜ`.
+Running the scripts with the parameters from the paper takes around seven minutes each on a M1 processor with 16GB of RAM using Julia version 1.10.1. This can be sped up by reducing either the resolution `N` or the number of snapshots in the training set `nₛ` and/or test set `nₜ`.
